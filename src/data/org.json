@@ -1,0 +1,715 @@
+{
+  "meta": {
+    "generatedAt": "2026-03-12T10:00:00Z",
+    "userName": "Guy Gev",
+    "company": "Check Point Software",
+    "team": "FWaaS (Firewall as a Service)",
+    "role": "Developer",
+    "currentFocus": "SMO (Single Management Object)"
+  },
+  "skills": [
+    {
+      "id": "aws-network",
+      "name": "AWS Network",
+      "description": "Read-only VPC network inspection — route tables, subnets, security groups, VPC peering, IGWs, NAT gateways, and ENIs.",
+      "triggers": ["route tables", "what routes does this subnet have", "security group rules", "is VPC peering active", "describe subnets", "list VPCs", "check IGW", "show ENIs", "network ACL"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Read-only VPC network inspection in Guy's AWS account (eu-north-1, profile go). Covers route tables, subnets, security groups, VPC peering, IGWs, NAT gateways, and ENIs. For deleting resources use aws-vpc-cleanup instead.",
+      "icon": "Network",
+      "color": "#f59e0b",
+      "knowledge": ["AWS CLI profile 'go'", "Region eu-north-1", "Account ID 649941507769", "VPC/subnet/route table structure"],
+      "capabilities": ["List and describe VPCs and subnets", "Inspect route tables and routes", "Check security group rules", "Verify VPC peering connections", "Inspect ENIs and network interfaces"],
+      "requiredTools": ["AWS API MCP Server (call_aws)", "Bash (aws CLI with --profile go)"],
+      "workflow": ["Identify target network resource", "Execute read-only AWS CLI command", "Format results as structured table", "Suggest related inspections"]
+    },
+    {
+      "id": "aws-cloudformation",
+      "name": "AWS CloudFormation",
+      "description": "CloudFormation stack operations — listing, deploying, inspecting, debugging, or deleting gwlb-instant-* FWaaS stacks.",
+      "triggers": ["check my stacks", "list stacks", "stack status", "deploy gwlb stack", "delete the CF stack", "stack CREATE_FAILED", "why did the stack fail", "stack outputs"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "CloudFormation stack operations in Guy's AWS account (eu-north-1, profile go). FWaaS test stacks are named gwlb-instant-*. Contains required commands and failure analysis patterns.",
+      "icon": "Layers",
+      "color": "#f59e0b",
+      "knowledge": ["Stack naming: gwlb-instant-*", "Common failure modes", "Stack lifecycle states", "Output/resource inspection"],
+      "capabilities": ["List active and deleted stacks", "Inspect stack resources and outputs", "Analyze stack creation failures", "Deploy new stacks", "Delete stacks safely"],
+      "requiredTools": ["AWS API MCP Server (call_aws)", "Bash (aws CLI with --profile go)"],
+      "workflow": ["Identify target stack by name or pattern", "Query stack status and events", "Analyze failures if any", "Format results with resource details"]
+    },
+    {
+      "id": "aws-asg",
+      "name": "AWS Auto Scaling",
+      "description": "Auto Scaling Group operations for SMO/FWaaS gateway clusters — scaling, capacity, activities, and instance lifecycle.",
+      "triggers": ["check the ASG", "scale up", "scale down", "set desired capacity", "why isn't it scaling", "ASG activities", "how many gateways", "SMO cluster size"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Auto Scaling Group operations for SMO gateway clusters in Guy's AWS FWaaS environment (eu-north-1, profile go). SMO gateway clusters are managed via ASGs — each member is an identical copy of the main gateway.",
+      "icon": "ArrowUpDown",
+      "color": "#f59e0b",
+      "knowledge": ["ASG names include stack name (gwlb-instant-*-GatewayGroup-*)", "SMO cluster = ASG of identical gateways", "Min/Max/Desired capacity controls"],
+      "capabilities": ["List ASGs with current capacity", "Set desired capacity", "View scaling activities", "Check instance health", "Force scale events"],
+      "requiredTools": ["AWS API MCP Server (call_aws)", "Bash (aws CLI with --profile go)"],
+      "workflow": ["Identify target ASG by stack name", "Query current capacity and activities", "Execute scaling operation if requested", "Monitor instance launch/termination"]
+    },
+    {
+      "id": "aws-gwlb-health",
+      "name": "AWS GWLB Health",
+      "description": "Gateway Load Balancer health inspection — target group status, endpoint service state, and full FWaaS datapath health chain.",
+      "triggers": ["check target health", "GWLB unhealthy", "is traffic flowing", "targets failing health checks", "endpoint service state", "check the load balancer", "are the gateways registered"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Inspect GWLB health, target group registration, and VPC Endpoint Service status. Maps the full FWaaS datapath health chain: EC2 instance → Target Group → GWLB → Endpoint Service → GWLB Endpoint.",
+      "icon": "HeartPulse",
+      "color": "#f59e0b",
+      "knowledge": ["Health chain: instance → target group → GWLB → endpoint service → endpoint", "FWaaS steers traffic through Check Point gateways via GWLB", "Unhealthy targets = traffic not reaching gateways"],
+      "capabilities": ["Check target group health status", "Inspect GWLB configuration", "Verify endpoint service state", "Map full datapath health chain", "Identify traffic flow issues"],
+      "requiredTools": ["AWS API MCP Server (call_aws)", "Bash (aws CLI with --profile go)"],
+      "workflow": ["Identify target GWLB/target group", "Check target health states", "Verify endpoint service connections", "Report full health chain status"]
+    },
+    {
+      "id": "aws-gw-ssh",
+      "name": "AWS Gateway SSH",
+      "description": "SSH into Check Point gateway EC2 instances — run diagnostics, cphaprob, fw ctl, tcpdump on FWaaS gateways.",
+      "triggers": ["SSH into the gateway", "connect to GW", "run cphaprob stat", "fw ctl", "gateway shell", "check the GW policy", "tcpdump on the gateway"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "SSH into Check Point gateway EC2 instances in Guy's FWaaS environment. Contains gateway credentials (admin/zubur1). Supports Check Point diagnostics: cphaprob, fw ctl, fw stat, tcpdump.",
+      "icon": "Terminal",
+      "color": "#f59e0b",
+      "knowledge": ["Gateway credentials: admin/zubur1", "Check Point diagnostic commands", "SSH via public IP from EC2 describe"],
+      "capabilities": ["SSH into gateway instances", "Run cphaprob stat/if", "Execute fw ctl/stat commands", "Run tcpdump for traffic analysis", "Check gateway policy installation"],
+      "requiredTools": ["Bash (ssh, aws CLI with --profile go)"],
+      "workflow": ["Get gateway instance IP via AWS CLI", "SSH with admin/zubur1 credentials", "Execute requested diagnostic command", "Parse and format output"]
+    },
+    {
+      "id": "aws-vpc-cleanup",
+      "name": "AWS VPC Cleanup",
+      "description": "Tear down gwlb-instant-* VPC stacks safely. Handles endpoint service dependencies that cause errors if deleted out of order.",
+      "triggers": ["delete the VPC", "clean up the test stack", "tear down gwlb-instant", "remove this VPC", "nuke the environment", "wipe the stack"],
+      "hasReferences": true,
+      "referenceFiles": ["aws-vpc-cleanup.md"],
+      "content": "Delete gwlb-instant-* VPC stacks in Guy's AWS account (eu-north-1, profile go). FWaaS VPCs have endpoint service dependencies that cause errors if deleted out of order. Contains the required deletion sequence.",
+      "icon": "Trash2",
+      "color": "#ef4444",
+      "knowledge": ["FWaaS VPCs have endpoint service dependencies", "Deletion order matters — wrong order causes hard-to-recover errors", "Must confirm with user before each destructive step"],
+      "capabilities": ["Identify target VPC by stack name or ID", "Follow correct dependency deletion order", "Clean up endpoint services before VPC", "Remove all associated resources"],
+      "requiredTools": ["AWS API MCP Server (call_aws)", "Bash (aws CLI with --profile go)"],
+      "workflow": ["Identify target VPC/stack", "Read cleanup reference for dependency order", "Confirm with user before each step", "Execute deletions in correct order"]
+    },
+    {
+      "id": "azure",
+      "name": "Azure",
+      "description": "Perform Azure infrastructure tasks — listing VMs, inspecting NSGs, route tables, load balancers, VNet peering, SSH into NVAs, or debugging connectivity.",
+      "triggers": ["check my Azure", "list VMs", "SSH into NVA", "update route table", "check NSG rules", "Azure resource group", "check ILB health", "peering status"],
+      "hasReferences": true,
+      "referenceFiles": ["azure-architecture.md", "azure-lessons-learned.md"],
+      "content": "Perform Azure actions using subscription 4f0b0e28-d402-449b-b459-52ecb69fb8e6 in swedencentral region. Manages rg-crossvnet-lab with 4 VMs (2 CloudGuard NVAs, 2 Ubuntu clients), 2 load balancers, 3 peered VNets. Includes SSH bypass routes, ILB HA Ports configuration, and external LB with DSR.",
+      "icon": "Server",
+      "color": "#3b82f6",
+      "knowledge": ["Subscription 4f0b0e28-d402-449b-b459-52ecb69fb8e6", "Region swedencentral", "Resource group rg-crossvnet-lab", "4 VMs: 2 CloudGuard NVAs + 2 Ubuntu clients", "3 peered VNets", "ILB with HA Ports + External LB with DSR"],
+      "capabilities": ["List and manage Azure VMs", "Inspect NSG rules and route tables", "Manage VNet peering connections", "SSH into NVA appliances", "Check ILB backend health probes", "Debug cross-VNet connectivity"],
+      "requiredTools": ["Bash (az CLI)", "SSH (for NVA access)"],
+      "workflow": ["Identify target Azure resource", "Execute az CLI command with subscription filter", "Parse and format JSON output", "Offer connectivity debugging if issues found"]
+    },
+    {
+      "id": "azure-lab-manager",
+      "name": "Azure Lab Manager",
+      "description": "Quick health check for Azure cross-VNet lab environment. Checks VM power state, ILB backend health, SSH bypass routes, and VNet peering status.",
+      "triggers": ["check my lab", "lab status", "is my lab ready", "lab health", "check NVAs", "check bypass route", "verify lab"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Quick health check for the Azure cross-VNet lab. Checks 4 VMs power state, ILB backend health probes, SSH bypass route configuration, and VNet peering status. Outputs a unified READY/NOT READY report with auto-fix offers for common issues.",
+      "icon": "Activity",
+      "color": "#22c55e",
+      "knowledge": ["Lab topology: 3 VNets peered together", "4 VMs: nva-1, nva-2, client-spoke1, client-spoke2", "ILB lb-internal with HA Ports", "SSH bypass routes for management access", "Expected healthy state for all probes"],
+      "capabilities": ["Check all VM power states", "Verify ILB backend health probes", "Validate SSH bypass route configuration", "Check VNet peering status", "Generate READY/NOT READY report", "Auto-fix common issues"],
+      "requiredTools": ["Bash (az CLI with subscription filter)"],
+      "workflow": ["Check VM power states (all 4 must be running)", "Check ILB probe health (all backends healthy)", "Verify SSH bypass routes exist", "Check VNet peering (all Connected)", "Output unified status report"]
+    },
+    {
+      "id": "installme",
+      "name": "InstallMe",
+      "description": "Check Point InstallMe task orchestration — running automation tests, regression tests, monitoring task/sequence status, analyzing failures, managing environments.",
+      "triggers": ["installme", "run scenario", "run automation", "run regression", "check task status", "why did my test fail", "analyze failure", "sequence status", "extend environment"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Full orchestration of Check Point's InstallMe automation system. Uses 3 MCP servers (GetInfo, Operator, Topologies) for running tests, monitoring tasks, managing sequences, installing machines, extending environments, and analyzing failures. Common scenarios include ElasticXL SGW Robot, HA Robot, and Cluster Regression Robot.",
+      "icon": "FlaskConical",
+      "color": "#a855f7",
+      "knowledge": ["Check Point InstallMe automation system", "3 MCP servers: GetInfo, Operator, Topologies", "Common scenarios: ElasticXL SGW Robot, HA Robot, Cluster Regression", "Task lifecycle: Pending > Running > Success/Failed", "Sequence = ordered group of tasks"],
+      "capabilities": ["Run automation test scenarios", "Monitor task and sequence status", "Analyze test failures with error details", "Extend environment hold time", "Re-execute failed tests", "Install machines and environments", "Power on/off VMs", "Stop running tasks"],
+      "requiredTools": ["InstallMe GetInfo MCP (18 tools)", "InstallMe Operator MCP (10 tools)", "InstallMe Topologies MCP (7 tools)"],
+      "workflow": ["Identify scenario/task/sequence from user request", "Query current status via GetInfo MCP", "Execute action via Operator MCP if needed", "Format results as structured table", "Offer follow-up: analyze failures, re-execute, extend env"]
+    },
+    {
+      "id": "morning-status",
+      "name": "Morning Status",
+      "description": "Combined daily status across all 3 environments — InstallMe test results, AWS running instances, and Azure lab health. Triggered by 'good morning'.",
+      "triggers": ["morning status", "daily check", "what's running", "check everything", "status report", "good morning", "start of day"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Generates a unified morning report across InstallMe (recent test sequences with pass/fail/running counts), AWS (running EC2 instances and active CloudFormation stacks), and Azure (lab VM power state and ILB probe health). Outputs formatted tables with a Quick Summary section.",
+      "icon": "Sun",
+      "color": "#f59e0b",
+      "knowledge": ["All 3 environments: InstallMe, AWS, Azure", "Guy's username: guygev", "AWS profile 'go', region eu-north-1", "Azure subscription and resource group", "Expected healthy states for each environment"],
+      "capabilities": ["Query InstallMe sequences from last 24h", "List running AWS EC2 instances", "Check active CloudFormation stacks", "Check Azure VM power states", "Verify ILB backend health", "Generate combined status report"],
+      "requiredTools": ["InstallMe GetInfo MCP", "Bash (aws CLI)", "Bash (az CLI)"],
+      "workflow": ["Query InstallMe sequences for guygev (last 24h)", "Get task status counts per sequence", "List running EC2 instances and active stacks", "Check Azure VM states and ILB health", "Output formatted tables with Quick Summary"]
+    },
+    {
+      "id": "skill-build",
+      "name": "Skill Builder",
+      "description": "Expert skill designer for Claude Code. Guides through discovery, trigger design, workflow architecture, generation, and validation of new skills.",
+      "triggers": ["build a skill", "create a skill", "make a new skill", "design a skill", "write a SKILL.md", "teach Claude to do X"],
+      "hasReferences": true,
+      "referenceFiles": ["guide-principles.md"],
+      "content": "6-phase skill creation workflow: Discovery (5 questions), Trigger Design (formula-based), Workflow Architecture (sequential/iterative/context-aware/domain-specific patterns), Generation (complete SKILL.md), Validation (11-point checklist), and Post-Delivery (verify triggering, iterate). Includes Anthropic's official skill design principles.",
+      "icon": "Hammer",
+      "color": "#ec4899",
+      "knowledge": ["Anthropic skill design principles", "SKILL.md frontmatter format", "Trigger design formula", "4 workflow patterns: sequential, iterative, context-aware, domain-specific", "11-point validation checklist"],
+      "capabilities": ["Guide through 5-question discovery phase", "Design optimal trigger phrases", "Choose workflow architecture pattern", "Generate complete SKILL.md file", "Validate against 11-point checklist", "Test trigger accuracy"],
+      "requiredTools": ["Read/Write (for SKILL.md files)", "Glob/Grep (for reference file discovery)"],
+      "workflow": ["Discovery: ask 5 questions about use case", "Classify: sequential/iterative/context-aware/domain-specific", "Design triggers: formula-based phrases", "Generate: complete SKILL.md with frontmatter", "Validate: 11-point checklist", "Post-delivery: verify triggering works"]
+    },
+    {
+      "id": "test-reporter",
+      "name": "Test Reporter",
+      "description": "Generate formatted test result reports from InstallMe sequences or tasks. Produces structured breakdowns suitable for Slack or Jira.",
+      "triggers": ["test report", "summarize results", "what passed", "what failed", "report for sequence", "format results", "test summary for branch"],
+      "hasReferences": false,
+      "referenceFiles": [],
+      "content": "Accepts Sequence ID, Task ID, or Branch+Take as input. Resolves all to data, then generates formatted tables with pass/fail/running sections, task IDs, and truncated error messages. Offers follow-up actions: analyze failures, re-execute, or check again later.",
+      "icon": "BarChart3",
+      "color": "#06b6d4",
+      "knowledge": ["InstallMe task/sequence data model", "Pass/Fail/Running status categories", "Formatted output styles for Slack and Jira", "Error message truncation rules"],
+      "capabilities": ["Accept Sequence ID, Task ID, or Branch+Take input", "Resolve any input to full task data", "Generate formatted pass/fail tables", "Show task IDs and truncated errors", "Offer follow-up: analyze failures, re-execute, check later"],
+      "requiredTools": ["InstallMe GetInfo MCP (get_sequence_tasks_status, get_task_info, count_sequence_tasks_by_status)"],
+      "workflow": ["Parse input (Sequence ID / Task ID / Branch+Take)", "Resolve to sequence data via GetInfo MCP", "Count tasks by status", "Format as structured table", "Offer follow-up actions"]
+    }
+  ],
+  "plugins": [
+    {
+      "id": "code-review@claude-plugins-official",
+      "shortName": "Code Review",
+      "marketplace": "claude-plugins-official",
+      "description": "Automated code review with focus on bugs, security, and best practices",
+      "enabled": true,
+      "icon": "Eye",
+      "docUrl": "https://docs.anthropic.com/en/docs/claude-code/skills"
+    },
+    {
+      "id": "commit-commands@claude-plugins-official",
+      "shortName": "Commit Commands",
+      "marketplace": "claude-plugins-official",
+      "description": "Git commit helpers — commit, push, and create PRs with formatted messages",
+      "enabled": true,
+      "icon": "GitCommitHorizontal",
+      "docUrl": "https://git-scm.com/docs"
+    },
+    {
+      "id": "code-simplifier@claude-plugins-official",
+      "shortName": "Code Simplifier",
+      "marketplace": "claude-plugins-official",
+      "description": "Simplifies and refines code for clarity, consistency, and maintainability",
+      "enabled": true,
+      "icon": "Sparkles",
+      "docUrl": "https://docs.anthropic.com/en/docs/claude-code/skills"
+    },
+    {
+      "id": "atlassian@claude-plugins-official",
+      "shortName": "Atlassian",
+      "marketplace": "claude-plugins-official",
+      "description": "Jira and Confluence integration for issue tracking and documentation",
+      "enabled": true,
+      "icon": "Kanban",
+      "docUrl": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/"
+    },
+    {
+      "id": "github@claude-plugins-official",
+      "shortName": "GitHub",
+      "marketplace": "claude-plugins-official",
+      "description": "GitHub repository management, PR handling, and issue management",
+      "enabled": true,
+      "icon": "Github",
+      "docUrl": "https://docs.github.com/en/rest"
+    },
+    {
+      "id": "skill-creator@claude-plugins-official",
+      "shortName": "Skill Creator",
+      "marketplace": "claude-plugins-official",
+      "description": "Create, modify, and evaluate Claude Code skills with performance benchmarking",
+      "enabled": true,
+      "icon": "Wand2",
+      "docUrl": "https://docs.anthropic.com/en/docs/claude-code/skills"
+    },
+    {
+      "id": "feature-dev@claude-plugins-official",
+      "shortName": "Feature Dev",
+      "marketplace": "claude-plugins-official",
+      "description": "Guided feature development with codebase understanding and architecture focus",
+      "enabled": true,
+      "icon": "Layers",
+      "docUrl": "https://docs.anthropic.com/en/docs/claude-code/skills"
+    },
+    {
+      "id": "hookify@claude-plugins-official",
+      "shortName": "Hookify",
+      "marketplace": "claude-plugins-official",
+      "description": "Create and manage hooks to prevent unwanted behaviors and enforce patterns",
+      "enabled": true,
+      "icon": "Anchor",
+      "docUrl": "https://docs.anthropic.com/en/docs/claude-code/hooks"
+    }
+  ],
+  "mcpServers": [
+    {
+      "id": "installme-getinfo",
+      "name": "InstallMe GetInfo",
+      "type": "custom",
+      "transport": "stdio",
+      "packageName": "chkp-mcp-installme-public",
+      "toolCount": 18,
+      "tools": [
+        { "name": "get_task_info", "description": "Retrieve task information by ID" },
+        { "name": "get_installme_topologies_details", "description": "Fetch all topology details" },
+        { "name": "get_environment_parameters", "description": "Get available environment parameters" },
+        { "name": "get_execution_parameters", "description": "Get runner and environment parameters" },
+        { "name": "get_default_topology_machines", "description": "Fetch machines for a topology" },
+        { "name": "get_test_scenario_info", "description": "Get info about a test scenario" },
+        { "name": "get_all_scenarios", "description": "List all test scenarios" },
+        { "name": "get_sanity_scenarios", "description": "Get sanity scenarios for a branch" },
+        { "name": "get_sequence_tasks_status", "description": "Get task details within a sequence" },
+        { "name": "get_sequences_with_filters", "description": "Search sequences with filters" },
+        { "name": "get_all_tasks", "description": "Get tasks with date and status filters" },
+        { "name": "get_user_machines", "description": "Get machines assigned to a user" },
+        { "name": "get_sub_tasks", "description": "Get task group sub-tasks" },
+        { "name": "get_available_installation_types", "description": "List installation types" },
+        { "name": "get_products_types", "description": "List product types" },
+        { "name": "get_copy_files_timing", "description": "Get copy files timing options" },
+        { "name": "count_sequence_tasks_by_status", "description": "Count tasks by status" },
+        { "name": "get_appliance_resources", "description": "Get appliance resource details" }
+      ],
+      "authStatus": "connected",
+      "description": "Read-only access to InstallMe — queries for tasks, sequences, scenarios, topologies, and machines"
+    },
+    {
+      "id": "installme-operator",
+      "name": "InstallMe Operator",
+      "type": "custom",
+      "transport": "stdio",
+      "packageName": "chkp-mcp-installme-operator",
+      "toolCount": 10,
+      "tools": [
+        { "name": "run_automation_test", "description": "Execute an automation test scenario" },
+        { "name": "stop_task", "description": "Stop a running task" },
+        { "name": "extend_environment", "description": "Extend environment hold time" },
+        { "name": "re_execute_test", "description": "Re-execute a test on an environment" },
+        { "name": "install_machine", "description": "Install software on a machine" },
+        { "name": "reorder_task", "description": "Reorder an existing task" },
+        { "name": "power_off_vm", "description": "Power off a virtual machine" },
+        { "name": "power_on_vm", "description": "Power on a virtual machine" },
+        { "name": "install_environment", "description": "Install a full environment" }
+      ],
+      "authStatus": "connected",
+      "description": "Write/action operations on InstallMe — run tests, install machines, manage environments"
+    },
+    {
+      "id": "installme-topologies",
+      "name": "InstallMe Topologies",
+      "type": "custom",
+      "transport": "stdio",
+      "packageName": "chkp-mcp-installme-internal-topologies",
+      "toolCount": 7,
+      "tools": [
+        { "name": "fetch_topology_info", "description": "Get detailed topology information" },
+        { "name": "fetch_public_machines_templates", "description": "List public machine templates" },
+        { "name": "fetch_available_machine_types", "description": "List available machine types" },
+        { "name": "fetch_installme_topologies_general_details", "description": "Get all topology summaries" },
+        { "name": "fetch_available_network_labels", "description": "List network labels" },
+        { "name": "is_user_allowed_to_create_topology", "description": "Check topology creation permission" },
+        { "name": "import_single_topology", "description": "Import a topology from schema" }
+      ],
+      "authStatus": "connected",
+      "description": "Topology management — query, create, and import test topologies"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "connected",
+      "description": "GitHub repository management, PRs, issues, and code search"
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Slack workspace messaging and channel management"
+    },
+    {
+      "id": "atlassian",
+      "name": "Atlassian",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Jira issues and Confluence documentation"
+    },
+    {
+      "id": "linear",
+      "name": "Linear",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Linear project and issue management"
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Notion pages and database management"
+    },
+    {
+      "id": "figma",
+      "name": "Figma",
+      "type": "external",
+      "transport": "http",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Figma design file access and inspection"
+    },
+    {
+      "id": "infinity-portal",
+      "name": "Infinity Portal",
+      "type": "external",
+      "transport": "cloud",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Check Point Infinity Portal access"
+    },
+    {
+      "id": "quantum-mgmt",
+      "name": "Quantum Security Mgmt",
+      "type": "external",
+      "transport": "cloud",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Check Point Quantum Security Management API"
+    },
+    {
+      "id": "blockchain",
+      "name": "Check Point Blockchain",
+      "type": "external",
+      "transport": "cloud",
+      "toolCount": 0,
+      "tools": [],
+      "authStatus": "needs-auth",
+      "description": "Check Point Blockchain services"
+    }
+  ],
+  "agents": [
+    {
+      "id": "general-purpose",
+      "name": "General Purpose",
+      "type": "general-purpose",
+      "description": "Autonomous agent for complex, multi-step tasks. Researches questions, searches code, executes multi-step workflows. The default workhorse agent.",
+      "tools": ["Bash", "Glob", "Grep", "Read", "Write", "Edit", "WebSearch", "WebFetch", "Agent (nested)"],
+      "useCases": ["Multi-step code refactoring", "Research complex questions", "Search across large codebases", "Execute sequential task workflows", "Delegate sub-tasks to other agents"],
+      "icon": "Bot",
+      "color": "#E27B58"
+    },
+    {
+      "id": "explore",
+      "name": "Explore",
+      "type": "Explore",
+      "description": "Fast, read-only agent for codebase exploration. Quickly finds files by patterns, searches code for keywords, and answers structural questions. Specify thoroughness: quick, medium, or very thorough.",
+      "tools": ["Glob", "Grep", "Read", "LS", "Bash (read-only)"],
+      "useCases": ["Find files matching a pattern", "Search for keyword usage across codebase", "Understand how a feature is implemented", "Map dependencies between modules", "Quick codebase orientation"],
+      "icon": "Search",
+      "color": "#5B9BD5"
+    },
+    {
+      "id": "plan",
+      "name": "Plan",
+      "type": "Plan",
+      "description": "Software architect agent. Designs implementation plans, identifies critical files, considers architectural trade-offs. Returns step-by-step blueprints.",
+      "tools": ["Glob", "Grep", "Read", "LS", "Bash (read-only)"],
+      "useCases": ["Design implementation strategy for a feature", "Identify architectural trade-offs", "Plan multi-file refactoring", "Create step-by-step implementation blueprints", "Evaluate multiple approaches"],
+      "icon": "Compass",
+      "color": "#5CB87A"
+    },
+    {
+      "id": "code-simplifier",
+      "name": "Code Simplifier",
+      "type": "code-simplifier",
+      "description": "Simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality. Focuses on recently modified code unless instructed otherwise.",
+      "tools": ["Read", "Edit", "Write", "Grep", "Glob"],
+      "useCases": ["Clean up messy code after rapid development", "Improve readability of complex functions", "Reduce code duplication", "Apply consistent formatting patterns", "Simplify nested conditionals"],
+      "icon": "Sparkles",
+      "color": "#E5A84B"
+    },
+    {
+      "id": "code-reviewer",
+      "name": "Code Reviewer",
+      "type": "feature-dev:code-reviewer",
+      "description": "Reviews code for bugs, logic errors, security vulnerabilities, and quality issues. Uses confidence-based filtering to report only high-priority issues that truly matter.",
+      "tools": ["Glob", "Grep", "Read", "Bash (git)", "WebSearch"],
+      "useCases": ["Review PR changes for bugs", "Find security vulnerabilities", "Check adherence to project conventions", "Identify logic errors in new code", "Validate error handling patterns"],
+      "icon": "Eye",
+      "color": "#D9534F"
+    },
+    {
+      "id": "code-explorer",
+      "name": "Code Explorer",
+      "type": "feature-dev:code-explorer",
+      "description": "Deeply analyzes existing codebase features by tracing execution paths, mapping architecture layers, understanding patterns, and documenting dependencies.",
+      "tools": ["Glob", "Grep", "Read", "LS", "Bash (read-only)"],
+      "useCases": ["Trace a request through all layers", "Map component architecture", "Understand existing abstractions", "Document data flow between modules", "Identify patterns before new development"],
+      "icon": "Layers",
+      "color": "#a855f7"
+    },
+    {
+      "id": "code-architect",
+      "name": "Code Architect",
+      "type": "feature-dev:code-architect",
+      "description": "Designs feature architectures by analyzing existing patterns and conventions. Provides comprehensive implementation blueprints with specific files, component designs, and data flows.",
+      "tools": ["Glob", "Grep", "Read", "LS", "Bash (read-only)", "WebSearch"],
+      "useCases": ["Design new feature architecture", "Plan component hierarchy", "Define data flow for new endpoints", "Create build sequence for complex features", "Match existing codebase conventions"],
+      "icon": "Lightbulb",
+      "color": "#06b6d4"
+    }
+  ],
+  "hooks": [
+    {
+      "event": "UserPromptSubmit",
+      "type": "command",
+      "command": "python3 userpromptsubmit.py",
+      "timeout": 10,
+      "source": "hookify",
+      "description": "Runs when user submits a prompt — validates input and enforces patterns"
+    },
+    {
+      "event": "PreToolUse",
+      "type": "command",
+      "command": "python3 pretooluse.py",
+      "timeout": 10,
+      "source": "hookify",
+      "description": "Runs before any tool execution — can block or modify tool calls"
+    },
+    {
+      "event": "PostToolUse",
+      "type": "command",
+      "command": "python3 posttooluse.py",
+      "timeout": 10,
+      "source": "hookify",
+      "description": "Runs after tool execution — validates results and enforces post-conditions"
+    },
+    {
+      "event": "Stop",
+      "type": "command",
+      "command": "python3 stop.py",
+      "timeout": 10,
+      "source": "hookify",
+      "description": "Runs when session stops — cleanup and final checks"
+    }
+  ],
+  "projects": [
+    {
+      "id": "home",
+      "path": "/Users/guygev",
+      "displayName": "Home (Default)",
+      "hasMemory": true,
+      "memorySummary": "User profile, SMO/FWaaS concepts, AWS context, team locations, and goals for building an AI-assisted workflow.",
+      "memoryContent": "# Memory\n\n## User Profile\n- Works at Check Point Software as a developer\n- Team product: FWaaS (Firewall as a Service)\n- Current focus: SMO (Single Management Object)\n\n## SMO / FWaaS Concept\n- A cluster of gateways that auto-scales based on CPU usage\n- All gateway members are identical copies of a main member\n- Represented as a single object in SmartConsole\n\n## AWS Context\n- Profile: go\n- Account: 649941507769\n- Region: eu-north-1\n\n## Team Locations\n- Guy: Stockholm\n- Daniel: London\n- Almog: Singapore\n- Yehuda: Frankfurt\n- Sugi: Paris\n\n## Goals\n- Build skills/workflows to delegate daily tasks to Claude reliably"
+    },
+    {
+      "id": "fwaas-smo-lfo",
+      "path": "/Users/guygev/Desktop/fwaas-smo-lfo-fix-sync",
+      "displayName": "FWaaS SMO LFO Fix Sync",
+      "hasMemory": true,
+      "memorySummary": "IPv6 DualStack support project. Lambda IPv6 feature verified working. State machine: NoSync through Ready states. Branch: feature/ipv6-dualstack-support.",
+      "memoryContent": "# FWaaS SMO LFO Fix Sync\n\n## Branch\nfeature/ipv6-dualstack-support (1 commit ahead of main)\n\n## Status\n- Lambda IPv6 feature: VERIFIED WORKING\n- Phase 6 (HTTP Logs): NOT YET VERIFIED\n\n## Architecture\n- State machine: NoSync > NoFTWCalled > FTWCalled > PostFTW > IPv6Config > NoHealthCheck > NoTargetGroup > Ready\n- Two-part IPv6 config: Part 1 (before FTW), Part 2 (after FTW)\n- br0 bridge fix: ensureBr0Bridge() in handlePostFTWState()\n\n## Files Changed\n5 files (+201/-84 lines): lf_types.go, ipv6_handlers.go, init_handlers.go, logs.go, test_automation.go"
+    }
+  ],
+  "permissions": [
+    {
+      "category": "AWS CLI",
+      "icon": "Cloud",
+      "permissions": [
+        { "raw": "Bash(aws ec2 describe-instances*)", "summary": "Describe EC2 instances", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-vpcs*)", "summary": "Describe VPCs", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-subnets*)", "summary": "Describe subnets", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-security-groups*)", "summary": "Describe security groups", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-route-tables*)", "summary": "Describe route tables", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-network-interfaces*)", "summary": "Describe ENIs", "source": "global" },
+        { "raw": "Bash(aws cloudformation list-stacks*)", "summary": "List CloudFormation stacks", "source": "global" },
+        { "raw": "Bash(aws cloudformation describe-stacks*)", "summary": "Describe CloudFormation stacks", "source": "global" },
+        { "raw": "Bash(aws cloudformation describe-stack-events*)", "summary": "View stack events", "source": "global" },
+        { "raw": "Bash(aws elbv2 describe*)", "summary": "Describe ELB resources", "source": "global" },
+        { "raw": "Bash(aws s3 ls*)", "summary": "List S3 objects", "source": "global" },
+        { "raw": "Bash(aws s3 cp*)", "summary": "Copy S3 objects", "source": "local" },
+        { "raw": "Bash(aws logs describe-log-groups*)", "summary": "Describe log groups", "source": "global" },
+        { "raw": "Bash(aws logs get-log-events*)", "summary": "Get log events", "source": "global" },
+        { "raw": "Bash(aws lambda list-functions*)", "summary": "List Lambda functions", "source": "global" },
+        { "raw": "Bash(aws iam get-role*)", "summary": "Get IAM role info", "source": "global" },
+        { "raw": "Bash(aws sts get-caller-identity*)", "summary": "Get caller identity", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-images*)", "summary": "Describe AMIs", "source": "global" },
+        { "raw": "Bash(aws autoscaling describe*)", "summary": "Describe autoscaling", "source": "global" },
+        { "raw": "Bash(aws ec2 describe-transit-gateways*)", "summary": "Describe transit gateways", "source": "local" }
+      ]
+    },
+    {
+      "category": "Azure CLI",
+      "icon": "Server",
+      "permissions": [
+        { "raw": "Bash(az vm list*)", "summary": "List Azure VMs", "source": "global" },
+        { "raw": "Bash(az vm show*)", "summary": "Show VM details", "source": "global" },
+        { "raw": "Bash(az vm get-instance-view*)", "summary": "Get VM instance view", "source": "global" },
+        { "raw": "Bash(az network lb*)", "summary": "Manage load balancers", "source": "global" },
+        { "raw": "Bash(az network lb probe*)", "summary": "Manage LB health probes", "source": "global" },
+        { "raw": "Bash(az network nsg rule list*)", "summary": "List NSG rules", "source": "local" },
+        { "raw": "Bash(az network nsg rule create*)", "summary": "Create NSG rules", "source": "local" },
+        { "raw": "Bash(az network vnet peering list*)", "summary": "List VNet peerings", "source": "local" },
+        { "raw": "Bash(az network vnet peering show*)", "summary": "Show peering details", "source": "local" },
+        { "raw": "Bash(az network route-table route list*)", "summary": "List routes", "source": "local" },
+        { "raw": "Bash(az network route-table route create*)", "summary": "Create routes", "source": "local" },
+        { "raw": "Bash(az network nic show*)", "summary": "Show NIC details", "source": "global" },
+        { "raw": "Bash(az network public-ip list*)", "summary": "List public IPs", "source": "global" },
+        { "raw": "Bash(az resource list*)", "summary": "List resources", "source": "global" },
+        { "raw": "Bash(az group list*)", "summary": "List resource groups", "source": "global" }
+      ]
+    },
+    {
+      "category": "SSH & Remote",
+      "icon": "Terminal",
+      "permissions": [
+        { "raw": "Bash(ssh -i ~/smo-key.pem*)", "summary": "SSH with SMO key", "source": "global" },
+        { "raw": "Bash(scp -i ~/smo-key.pem*)", "summary": "SCP file transfer", "source": "global" },
+        { "raw": "Bash(ssh -o StrictHostKeyChecking=no*)", "summary": "SSH skip host check", "source": "local" },
+        { "raw": "Bash(ssh -J *)", "summary": "SSH via jump host", "source": "local" },
+        { "raw": "Bash(ssh-keygen*)", "summary": "Generate SSH keys", "source": "global" },
+        { "raw": "Bash(ssh-copy-id*)", "summary": "Copy SSH public key", "source": "global" },
+        { "raw": "Bash(rsync -e 'ssh*')", "summary": "Rsync over SSH", "source": "local" },
+        { "raw": "Bash(ssh -L *)", "summary": "SSH local port forward", "source": "local" },
+        { "raw": "Bash(ssh -N -f *)", "summary": "SSH background tunnel", "source": "local" },
+        { "raw": "Bash(sshpass *)", "summary": "SSH with password", "source": "local" },
+        { "raw": "Bash(ssh -t * sudo*)", "summary": "SSH with sudo", "source": "local" },
+        { "raw": "Bash(ssh * clish -c*)", "summary": "Remote clish commands", "source": "global" }
+      ]
+    },
+    {
+      "category": "Git",
+      "icon": "GitBranch",
+      "permissions": [
+        { "raw": "Bash(git status*)", "summary": "Check git status", "source": "global" },
+        { "raw": "Bash(git log*)", "summary": "View git log", "source": "global" },
+        { "raw": "Bash(git diff*)", "summary": "View git diff", "source": "global" },
+        { "raw": "Bash(git commit*)", "summary": "Create commits", "source": "global" },
+        { "raw": "Bash(git push*)", "summary": "Push to remote", "source": "global" },
+        { "raw": "Bash(git pull*)", "summary": "Pull from remote", "source": "global" },
+        { "raw": "Bash(git checkout*)", "summary": "Switch branches", "source": "global" },
+        { "raw": "Bash(git branch*)", "summary": "Manage branches", "source": "global" },
+        { "raw": "Bash(git stash*)", "summary": "Stash changes", "source": "global" },
+        { "raw": "Bash(git merge*)", "summary": "Merge branches", "source": "global" },
+        { "raw": "Bash(git rebase*)", "summary": "Rebase branches", "source": "global" },
+        { "raw": "Bash(git cherry-pick*)", "summary": "Cherry-pick commits", "source": "global" },
+        { "raw": "Bash(git fetch*)", "summary": "Fetch remote refs", "source": "global" },
+        { "raw": "Bash(git tag*)", "summary": "Manage tags", "source": "global" },
+        { "raw": "Bash(git remote*)", "summary": "Manage remotes", "source": "global" },
+        { "raw": "Bash(git worktree*)", "summary": "Manage worktrees", "source": "global" },
+        { "raw": "Bash(git clean*)", "summary": "Clean working tree", "source": "local" },
+        { "raw": "Bash(git reset*)", "summary": "Reset HEAD", "source": "local" },
+        { "raw": "Bash(git rev-parse*)", "summary": "Parse revisions", "source": "global" },
+        { "raw": "Bash(gh pr *)", "summary": "GitHub PR operations", "source": "global" }
+      ]
+    },
+    {
+      "category": "Check Point CLI",
+      "icon": "Shield",
+      "permissions": [
+        { "raw": "Bash(*mgmt_cli*)", "summary": "Management CLI commands", "source": "global" },
+        { "raw": "Bash(*installer*)", "summary": "Installer operations", "source": "global" },
+        { "raw": "Bash(*da_cli*)", "summary": "DA CLI commands", "source": "global" },
+        { "raw": "Bash(*cpca_client*)", "summary": "Certificate authority client", "source": "global" },
+        { "raw": "Bash(*cpstat*)", "summary": "Check Point statistics", "source": "global" },
+        { "raw": "Bash(*cpview*)", "summary": "Check Point viewer", "source": "global" },
+        { "raw": "Bash(*fw ctl*)", "summary": "Firewall control", "source": "global" },
+        { "raw": "Bash(*fwaccel*)", "summary": "Firewall acceleration", "source": "global" },
+        { "raw": "Bash(*cplic*)", "summary": "License management", "source": "global" },
+        { "raw": "Bash(*cpinfo*)", "summary": "System information", "source": "global" },
+        { "raw": "Bash(*cphaprob*)", "summary": "HA status probe", "source": "global" },
+        { "raw": "Bash(*cpprod_util*)", "summary": "Product utilities", "source": "global" },
+        { "raw": "Bash(*autoprov_cfg*)", "summary": "Auto-provisioning config", "source": "local" },
+        { "raw": "Bash(*vsec_admin*)", "summary": "vSEC administration", "source": "local" }
+      ]
+    },
+    {
+      "category": "System & Tools",
+      "icon": "Wrench",
+      "permissions": [
+        { "raw": "Bash(node *)", "summary": "Run Node.js scripts", "source": "global" },
+        { "raw": "Bash(npm *)", "summary": "npm operations", "source": "global" },
+        { "raw": "Bash(npx *)", "summary": "npx operations", "source": "global" },
+        { "raw": "Bash(python3 *)", "summary": "Run Python scripts", "source": "global" },
+        { "raw": "Bash(pip install*)", "summary": "Install Python packages", "source": "local" },
+        { "raw": "Bash(curl *)", "summary": "HTTP requests", "source": "global" },
+        { "raw": "Bash(wget *)", "summary": "Download files", "source": "local" },
+        { "raw": "Bash(jq *)", "summary": "JSON processing", "source": "global" },
+        { "raw": "Bash(docker *)", "summary": "Docker operations", "source": "local" },
+        { "raw": "Bash(kubectl *)", "summary": "Kubernetes operations", "source": "local" },
+        { "raw": "Bash(make *)", "summary": "Run Makefiles", "source": "global" },
+        { "raw": "Bash(tsc *)", "summary": "TypeScript compiler", "source": "global" },
+        { "raw": "Bash(eslint *)", "summary": "ESLint checks", "source": "global" },
+        { "raw": "Bash(prettier *)", "summary": "Prettier formatting", "source": "global" },
+        { "raw": "Bash(tar *)", "summary": "Archive operations", "source": "global" }
+      ]
+    }
+  ],
+  "memory": {
+    "userProfile": {
+      "name": "Guy Gev",
+      "company": "Check Point Software",
+      "team": "FWaaS",
+      "role": "Developer",
+      "focus": "SMO (Single Management Object)"
+    },
+    "awsContext": {
+      "Profile": "go",
+      "Account ID": "649941507769",
+      "Account Name": "chkp-aws-rnd-fwaas-gw-smo-base",
+      "Region": "eu-north-1",
+      "Auth": "SSO / IAM Identity Center"
+    },
+    "goals": [
+      "Build skills/workflows to delegate daily tasks to Claude reliably",
+      "Create a visual dashboard to manage AI organization"
+    ],
+    "rawContent": "# Memory\n\n## User Profile\n- Works at Check Point Software as a developer\n- Team: FWaaS (Firewall as a Service)\n- Focus: SMO (Single Management Object)\n\n## SMO / FWaaS Concept\n- A cluster of gateways that auto-scales based on CPU usage\n- All gateway members are identical copies of a main member\n- Represented as a single object in SmartConsole"
+  },
+  "scheduledTasks": [],
+  "teamMembers": [
+    { "name": "Guy", "location": "Stockholm", "emoji": "🇸🇪" },
+    { "name": "Daniel", "location": "London", "emoji": "🇬🇧" },
+    { "name": "Almog", "location": "Singapore", "emoji": "🇸🇬" },
+    { "name": "Yehuda", "location": "Frankfurt", "emoji": "🇩🇪" },
+    { "name": "Sugi", "location": "Paris", "emoji": "🇫🇷" }
+  ]
+}
