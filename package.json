@@ -7,7 +7,7 @@
   "author": "Guy Gev",
   "keywords": ["claude", "claude-code", "dashboard", "cli", "ai", "developer-tools"],
   "bin": {
-    "claude-hq": "./bin/claude-hq.mjs"
+    "claude-hq": "bin/claude-hq.mjs"
   },
   "files": [
     "bin/",

@@ -5,10 +5,14 @@ A local dashboard for your Claude Code setup — skills, plugins, projects, memo
 ## Quick Start
 
 ```bash
-npx claude-hq
+git clone https://github.com/GevaIluz/claude-hq.git
+cd claude-hq
+npm install
+npm run build
+npm start
 ```
 
-That's it. Opens in your browser automatically.
+Opens in your browser automatically at `http://localhost:5174`.
 
 ## What It Shows
 
@@ -34,17 +38,13 @@ Claude HQ reads your `~/.claude/` directory and presents everything in a clean d
 ## Options
 
 ```bash
-npx claude-hq --port 3000    # Custom port (default: 5174)
-npx claude-hq --no-open      # Don't auto-open browser
+npm start -- --port 3000    # Custom port (default: 5174)
+npm start -- --no-open      # Don't auto-open browser
 ```
 
 ## Development
 
 ```bash
-git clone https://github.com/guygev/claude-hq.git
-cd claude-hq
-npm install
-
 # Terminal 1: API server (watches ~/.claude/, serves data)
 npm run server
 
