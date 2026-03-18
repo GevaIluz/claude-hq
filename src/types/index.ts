@@ -235,6 +235,7 @@ export interface MissionAgent {
   status: MissionAgentStatus;
   statusData: MissionAgentStatusFile | null;
   command: string;
+  prompt: string;
   launched: boolean;
   launchedAt?: string;
 }

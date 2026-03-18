@@ -158,6 +158,7 @@ export function generateMissionAgents(
         status: 'idle',
         statusData: null,
         command,
+        prompt,
         launched: false,
       });
     }

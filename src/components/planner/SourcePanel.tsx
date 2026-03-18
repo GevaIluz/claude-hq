@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, FolderOpen, Bot, Zap, Plus, RefreshCw, Check, Users, Wrench, Lightbulb } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderOpen, Bot, Zap, Plus, RefreshCw, Check, Users, Wrench, Lightbulb, CircleDot, Server, Plug, GitBranch } from 'lucide-react';
 import { useDraggable } from '../../hooks/useDragDrop';
-import type { Agent, Skill, PlannerProject, Employee } from '../../types';
+import type { Agent, Skill, PlannerProject, Employee, McpServer, Plugin, Hook } from '../../types';
+import type { JiraGroup, JiraTicket } from '../../hooks/useJiraProjects';
 
 interface SourcePanelProps {
   agents: Agent[];
   skills: Skill[];
+  mcpServers: McpServer[];
+  plugins: Plugin[];
+  hooks: Hook[];
   jiraProjects: PlannerProject[];
+  jiraGroups: JiraGroup[];
   jiraLoading: boolean;
   jiraSynced: boolean;
   onSyncJira: () => void;
@@ -78,6 +83,80 @@ function DraggableProject({ project, added }: { project: { id: string; displayNa
       {added && <Check size={14} className="text-success" />}
       {project.source === 'jira' && (
         <span className="text-[10px] font-mono bg-info/10 text-info px-2 py-0.5 rounded">JIRA</span>
+      )}
+    </div>
+  );
+}
+
+const statusColors: Record<string, string> = {
+  'Open': 'bg-blue-100 text-blue-700',
+  'In Progress': 'bg-yellow-100 text-yellow-800',
+  'In Development': 'bg-yellow-100 text-yellow-800',
+  'Implementation': 'bg-yellow-100 text-yellow-800',
+  'Review': 'bg-purple-100 text-purple-700',
+  'Done': 'bg-green-100 text-green-700',
+};
+
+function DraggableJiraTicket({ ticket, added }: { ticket: JiraTicket; added: boolean }) {
+  const dragProps = useDraggable('project', {
+    id: ticket.projectId,
+    displayName: ticket.displayName,
+    source: 'jira',
+  });
+
+  const statusClass = statusColors[ticket.status] || 'bg-gray-100 text-gray-600';
+
+  return (
+    <div
+      {...dragProps}
+      className={`px-3 py-2.5 rounded-xl text-sm cursor-grab active:cursor-grabbing transition-all
+        ${added
+          ? 'bg-bg-surface-hover/50 text-text-muted'
+          : 'bg-bg-primary border border-border hover:border-accent/30 hover:shadow-sm text-text-secondary hover:text-text-primary'
+        }`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[10px] font-mono text-accent font-medium">{ticket.jiraKey}</span>
+        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${statusClass}`}>
+          {ticket.status}
+        </span>
+        {added && <Check size={12} className="text-success ml-auto" />}
+      </div>
+      <div className={`text-xs leading-snug ${added ? 'text-text-muted' : 'text-text-primary'}`}>
+        {ticket.displayName}
+      </div>
+    </div>
+  );
+}
+
+function SprintGroup({ group, addedProjectIds }: { group: JiraGroup; addedProjectIds: Set<string> }) {
+  const [open, setOpen] = useState(group.state === 'active' || group.state === 'backlog');
+
+  const stateLabel: Record<string, { color: string; text: string }> = {
+    active: { color: 'bg-green-500', text: 'Active' },
+    future: { color: 'bg-blue-400', text: 'Future' },
+    closed: { color: 'bg-gray-400', text: 'Closed' },
+    backlog: { color: 'bg-amber-400', text: 'Backlog' },
+  };
+  const s = stateLabel[group.state] || stateLabel.backlog;
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-2 py-2 text-xs hover:bg-bg-surface-hover/50 rounded-lg transition-colors"
+      >
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <span className={`w-2 h-2 rounded-full ${s.color}`} />
+        <span className="font-medium text-text-primary flex-1 text-left truncate">{group.label}</span>
+        <span className="text-[10px] text-text-muted">{group.tickets.length}</span>
+      </button>
+      {open && (
+        <div className="space-y-1.5 pl-2 mt-1 mb-3">
+          {group.tickets.map(t => (
+            <DraggableJiraTicket key={t.jiraKey} ticket={t} added={addedProjectIds.has(t.projectId)} />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -201,6 +280,59 @@ function DraggableSkill({ skill }: { skill: Skill }) {
   );
 }
 
+function DraggableMcp({ mcp }: { mcp: McpServer }) {
+  const dragProps = useDraggable('mcp', { id: mcp.id, name: mcp.name });
+
+  return (
+    <div
+      {...dragProps}
+      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-bg-primary border border-border
+        hover:border-accent/30 hover:shadow-sm text-text-secondary hover:text-text-primary cursor-grab active:cursor-grabbing transition-all"
+    >
+      <Server size={14} className="text-info" />
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-text-primary truncate">{mcp.name}</div>
+        <div className="text-[10px] text-text-muted">{mcp.toolCount} tools · {mcp.transport}</div>
+      </div>
+      <span className={`w-2 h-2 rounded-full ${mcp.authStatus === 'connected' ? 'bg-success' : 'bg-warning'}`} />
+    </div>
+  );
+}
+
+function DraggablePlugin({ plugin }: { plugin: Plugin }) {
+  const dragProps = useDraggable('plugin', { id: plugin.id, name: plugin.shortName });
+
+  return (
+    <div
+      {...dragProps}
+      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-bg-primary border border-border
+        hover:border-accent/30 hover:shadow-sm text-text-secondary hover:text-text-primary cursor-grab active:cursor-grabbing transition-all"
+    >
+      <Plug size={14} className="text-purple-500" />
+      <span className="flex-1 truncate">{plugin.shortName}</span>
+      {plugin.enabled && <span className="w-2 h-2 rounded-full bg-success" />}
+    </div>
+  );
+}
+
+function DraggableHook({ hook }: { hook: Hook }) {
+  const dragProps = useDraggable('hook', { id: `${hook.event}-${hook.command.slice(0, 20)}`, name: hook.description || hook.command, event: hook.event });
+
+  return (
+    <div
+      {...dragProps}
+      className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-bg-primary border border-border
+        hover:border-accent/30 hover:shadow-sm text-text-secondary hover:text-text-primary cursor-grab active:cursor-grabbing transition-all"
+    >
+      <GitBranch size={14} className="text-amber-500" />
+      <div className="flex-1 min-w-0">
+        <div className="text-xs text-text-primary truncate">{hook.description || hook.command}</div>
+        <div className="text-[10px] text-text-muted">{hook.event} · {hook.type}</div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Accordion ──────────────────────────────
 
 function AccordionSection({ title, icon: Icon, count, defaultOpen, children }: {
@@ -231,23 +363,30 @@ function AccordionSection({ title, icon: Icon, count, defaultOpen, children }: {
 // ─── Main Panel ──────────────────────────────
 
 export function SourcePanel({
-  agents, skills, jiraProjects, jiraLoading, jiraSynced,
+  agents, skills, mcpServers, plugins, hooks,
+  jiraProjects, jiraGroups, jiraLoading, jiraSynced,
   onSyncJira, onAddManualProject, addedProjectIds, isZoomed,
   employees, onConfigureAgent,
 }: SourcePanelProps) {
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const allProjects = jiraProjects.map(p => ({ id: p.projectId, displayName: p.displayName, source: 'jira' }));
+  const totalTickets = jiraGroups.reduce((sum, g) => sum + g.tickets.length, 0);
 
   return (
     <div className="w-80 shrink-0 bg-bg-surface border-r border-border overflow-y-auto">
       <div className="p-4 space-y-1">
-        {/* Projects Section */}
-        <AccordionSection title="Projects" icon={FolderOpen} count={allProjects.length} defaultOpen={!isZoomed}>
-          {allProjects.map(p => (
-            <DraggableProject key={p.id} project={p} added={addedProjectIds.has(p.id)} />
-          ))}
+        {/* Jira Tickets Section */}
+        <AccordionSection title="Jira Tickets" icon={CircleDot} count={totalTickets} defaultOpen={!isZoomed}>
+          {jiraSynced && jiraGroups.length > 0 ? (
+            jiraGroups.map(g => (
+              <SprintGroup key={g.label} group={g} addedProjectIds={addedProjectIds} />
+            ))
+          ) : !jiraSynced ? (
+            <p className="text-xs text-text-muted px-2 py-3">Click "Sync Jira" to load your tickets</p>
+          ) : (
+            <p className="text-xs text-text-muted px-2 py-3">No tickets found</p>
+          )}
 
           {showAddForm ? (
             <InlineAddProjectForm
@@ -307,6 +446,27 @@ export function SourcePanel({
         <AccordionSection title="Skills" icon={Zap} count={skills.length} defaultOpen={isZoomed}>
           {skills.map(s => (
             <DraggableSkill key={s.id} skill={s} />
+          ))}
+        </AccordionSection>
+
+        {/* MCP Servers Section */}
+        <AccordionSection title="MCP Servers" icon={Server} count={mcpServers.length} defaultOpen={false}>
+          {mcpServers.map(m => (
+            <DraggableMcp key={m.id} mcp={m} />
+          ))}
+        </AccordionSection>
+
+        {/* Plugins Section */}
+        <AccordionSection title="Plugins" icon={Plug} count={plugins.length} defaultOpen={false}>
+          {plugins.map(p => (
+            <DraggablePlugin key={p.id} plugin={p} />
+          ))}
+        </AccordionSection>
+
+        {/* Hooks Section */}
+        <AccordionSection title="Hooks" icon={GitBranch} count={hooks.length} defaultOpen={false}>
+          {hooks.map((h, i) => (
+            <DraggableHook key={`${h.event}-${i}`} hook={h} />
           ))}
         </AccordionSection>
       </div>

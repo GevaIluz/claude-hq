@@ -83,7 +83,11 @@ function PlannerInner({ orgData, storage }: { orgData: OrgData; storage: Storage
           <SourcePanel
             agents={orgData.agents}
             skills={orgData.skills}
+            mcpServers={orgData.mcpServers}
+            plugins={orgData.plugins}
+            hooks={orgData.hooks}
             jiraProjects={jira.projects}
+            jiraGroups={jira.groups}
             jiraLoading={jira.loading}
             jiraSynced={jira.synced}
             onSyncJira={handleSyncJira}

@@ -42,15 +42,24 @@ export function MissionControlView({ orgData, employees }: MissionControlViewPro
   }, []);
 
   const handleLaunchAgent = async (agent: MissionAgent) => {
-    const script = generateSingleLaunchScript(agent);
     try {
-      // Copy launch script to clipboard for the user
-      await navigator.clipboard.writeText(script);
-      missionDispatch({ type: 'MARK_LAUNCHED', agentInstanceId: agent.agentInstanceId });
+      // Ask the server to open a Terminal window and run the agent
+      const res = await fetch('/api/launch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: agent.prompt }),
+      });
+      if (!res.ok) {
+        // Fallback: copy script to clipboard
+        const script = generateSingleLaunchScript(agent);
+        await navigator.clipboard.writeText(script).catch(() => {});
+      }
     } catch {
-      // Fallback: just mark as launched
-      missionDispatch({ type: 'MARK_LAUNCHED', agentInstanceId: agent.agentInstanceId });
+      // Offline fallback: copy to clipboard
+      const script = generateSingleLaunchScript(agent);
+      await navigator.clipboard.writeText(script).catch(() => {});
     }
+    missionDispatch({ type: 'MARK_LAUNCHED', agentInstanceId: agent.agentInstanceId });
   };
 
   const handleLaunchAll = () => {

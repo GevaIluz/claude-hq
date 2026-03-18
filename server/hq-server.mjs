@@ -21,9 +21,10 @@
 
 import express from 'express';
 import { watch } from 'fs';
-import { readFile, readdir, mkdir } from 'fs/promises';
+import { readFile, readdir, mkdir, writeFile, chmod } from 'fs/promises';
 import { join } from 'path';
 import { homedir } from 'os';
+import { exec } from 'child_process';
 import { buildOrgData } from './org-builder.mjs';
 
 const CLAUDE_DIR = join(homedir(), '.claude');
@@ -184,6 +185,142 @@ export async function createApp(options = {}) {
       clearInterval(keepAlive);
       if (watcher) watcher.close();
     });
+  });
+
+  // ─── Agent Launch ────────────────────────────────────────────
+  // Opens a visible Terminal window and runs claude with the mission prompt.
+
+  router.post('/launch', express.json(), async (req, res) => {
+    const { prompt, workDir } = req.body;
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ error: 'Missing prompt' });
+    }
+
+    try {
+      const ts = Date.now();
+      const promptFile = `/tmp/claude-hq-prompt-${ts}.md`;
+
+      await writeFile(promptFile, prompt, 'utf-8');
+
+      const cwd = workDir || homedir();
+
+      // Interactive launch using tmux:
+      // 1. Create a tmux session running claude --dangerously-skip-permissions
+      // 2. Use tmux send-keys to navigate the accept menu and send the prompt
+      // 3. Open Terminal attached to the tmux session so user can interact
+      const sessionName = `claude-hq-${ts}`;
+      const launchScript = `/tmp/claude-hq-launch-${ts}.sh`;
+      const bashScript = `#!/bin/bash
+SESSION="${sessionName}"
+PROMPT_FILE="${promptFile}"
+
+# Start tmux session with claude in detached mode
+tmux new-session -d -s "$SESSION" -x 200 -y 50 "cd '${cwd}' && /usr/local/bin/claude --dangerously-skip-permissions"
+
+# Wait for the accept menu to appear
+sleep 5
+
+# Down arrow to select "Yes, I accept", then Enter
+tmux send-keys -t "$SESSION" Down
+sleep 0.3
+tmux send-keys -t "$SESSION" Enter
+
+# Wait for Claude TUI to fully load
+sleep 8
+
+# Read prompt from file and paste it using tmux's buffer
+tmux load-buffer "$PROMPT_FILE"
+tmux paste-buffer -t "$SESSION"
+
+# Small delay then submit
+sleep 1
+tmux send-keys -t "$SESSION" Enter
+
+echo "🤖 Claude agent is running in tmux session: $SESSION"
+echo "   Attaching now..."
+sleep 1
+
+# Attach to the session (user can now interact freely)
+tmux attach -t "$SESSION"
+`;
+
+      await writeFile(launchScript, bashScript, 'utf-8');
+      await chmod(launchScript, '755');
+
+      // Open in a new Terminal window
+      exec(`osascript -e 'tell application "Terminal" to do script "bash ${launchScript}"' -e 'tell application "Terminal" to activate'`, (err) => {
+        if (err) {
+          console.error('Launch error:', err.message);
+        } else {
+          console.log(`🚀 Agent launched in tmux session ${sessionName}`);
+        }
+      });
+
+      // Respond immediately — don't wait for the agent to finish
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ─── Jira API Proxy ────────────────────────────────────────
+
+  const JIRA_BASE = process.env.JIRA_URL || 'https://jira-prd.checkpoint.com';
+  let JIRA_TOKEN = process.env.JIRA_PERSONAL_TOKEN;
+
+  // Try to load from ~/.zshrc if not in environment
+  if (!JIRA_TOKEN) {
+    try {
+      const zshrc = await readFile(join(homedir(), '.zshrc'), 'utf-8');
+      const match = zshrc.match(/export\s+JIRA_PERSONAL_TOKEN=["']?([^"'\n]+)/);
+      if (match) {
+        JIRA_TOKEN = match[1];
+        console.log('🔑 Loaded JIRA_PERSONAL_TOKEN from ~/.zshrc');
+      }
+    } catch { /* ignore */ }
+  }
+
+  router.get('/jira/search', async (req, res) => {
+    if (!JIRA_TOKEN) {
+      return res.status(503).json({ error: 'JIRA_PERSONAL_TOKEN not set' });
+    }
+    const jql = req.query.jql || 'assignee = currentUser() ORDER BY updated DESC';
+    const maxResults = req.query.maxResults || '20';
+    const fields = req.query.fields || 'summary,status,priority,issuetype,project,assignee,updated,created,customfield_10004';
+
+    try {
+      const url = `${JIRA_BASE}/rest/api/2/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=${fields}`;
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${JIRA_TOKEN}` },
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        return res.status(resp.status).json({ error: text });
+      }
+      const data = await resp.json();
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.get('/jira/issue/:key', async (req, res) => {
+    if (!JIRA_TOKEN) {
+      return res.status(503).json({ error: 'JIRA_PERSONAL_TOKEN not set' });
+    }
+    try {
+      const url = `${JIRA_BASE}/rest/api/2/issue/${req.params.key}`;
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${JIRA_TOKEN}` },
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        return res.status(resp.status).json({ error: text });
+      }
+      res.json(await resp.json());
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Mount all API routes under /api

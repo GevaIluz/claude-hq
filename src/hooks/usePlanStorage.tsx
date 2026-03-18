@@ -46,11 +46,11 @@ export function usePlanStorage() {
   const createPlan = useCallback((name: string): SavedPlan => {
     const plan: SavedPlan = {
       id: crypto.randomUUID(),
-      name: name || `Plan — ${new Date().toLocaleDateString()}`,
+      name: name || `Plan — ${new Date().toLocaleDateString('en-GB')}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       state: {
-        planName: name || `Plan — ${new Date().toLocaleDateString()}`,
+        planName: name || `Plan — ${new Date().toLocaleDateString('en-GB')}`,
         projects: [],
         zoomedProjectId: null,
         showPromptPreview: false,
